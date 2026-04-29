@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>武魂模拟器</title>
+    <style>
+        /* ================= 基础重置与变量 ================= */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+
+        :root {
+            --bg-dark: #0a0e17; /* 背景深色 */
+            --text-main: #e0e5ec; /* 主要文字颜色 */
+            --text-dim: #8b9bb4; /* 次要文字颜色 */
+            --accent-blue: #4facfe; /* 蓝色高光 */
+            --accent-gold: #d4af37; /* 金色字体 */
+        }
+
+        body {
+            background-color: #333; /* 浏览器外围背景色 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* 模拟手机屏幕的容器 */
+        .mobile-container {
+            width: 375px; /* 标准手机宽度 */
+            height: 812px; /* 标准手机高度 (如 iPhone X) */
+            background: radial-gradient(circle at center 40%, #152642 0%, var(--bg-dark) 70%);
+            position: relative;
+            overflow: hidden;
+            color: var(--text-main);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* ================= 顶部导航与状态栏 ================= */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        .top-bar .title {
+            color: var(--accent-gold);
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .top-bar .nav-links span {
+            margin-left: 15px;
+        }
+
+        /* 右侧垂直数值面板 */
+        .stats-panel {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            text-align: right;
+            z-index: 10;
+        }
+
+        .stat-item {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 3px;
+            text-shadow: 0 0 5px rgba(255,255,255,0.3);
+        }
+
+        /* ================= 中心视觉区域 (龙与魔法阵) ================= */
+        .visual-area {
+            position: absolute;
+            top: 25%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 模拟魔法阵发光背景 */
+        .magic-circle-placeholder {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px dashed rgba(79, 172, 254, 0.3);
+            box-shadow: 0 0 50px rgba(79, 172, 254, 0.2), inset 0 0 50px rgba(79, 172, 254, 0.2);
+            animation: rotate 20s linear infinite; /* 添加微微的旋转动画 */
+        }
+
+        /* 模拟龙的图片占位 */
+        .dragon-placeholder {
+            font-size: 80px; /* 用 Emoji 占位，之后换成 img 标签 */
+            z-index: 2;
+            text-shadow: 0 0 30px var(--accent-blue);
+        }
+
+        @keyframes rotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ================= 底部信息面板 ================= */
+        .info-panel {
+            position: absolute;
+            bottom: 80px; /* 留出底部导航的空间 */
+            width: 100%;
+            padding: 0 30px;
+        }
+
+        .dragon-name {
+            text-align: center;
+            font-size: 26px;
+            color: #8ab4f8; /* 浅蓝色 */
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+        }
+
+        .attributes-list {
+            list-style-type: none;
+            font-size: 13px;
+            line-height: 1.8;
+            color: var(--text-dim);
+        }
+
+        .attributes-list li::before {
+            content: "·";
+            margin-right: 8px;
+            color: var(--text-main);
+            font-weight: bold;
+        }
+
+        .highlight {
+            color: var(--text-main);
+        }
+
+        /* ================= 底部导航栏 ================= */
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 70px;
+            background: linear-gradient(to top, #05080f, transparent);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: 10px;
+        }
+
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-dim);
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .nav-btn .icon {
+            font-size: 22px;
+            margin-bottom: 4px;
+            opacity: 0.7;
+        }
+
+        .nav-btn.active {
+            color: var(--accent-gold);
+        }
+
+        .nav-btn.active .icon {
+            opacity: 1;
+            transform: scale(1.2);
+            text-shadow: 0 0 10px var(--accent-gold);
+        }
+    </style>
+</head>
+<body>
+
+<div class="mobile-container">
+    <header class="top-bar">
+        <div class="title">武魂模拟器</div>
+        <div class="nav-links">
+            <span>战力</span>
+            <span>等级</span>
+            <span>货币:魂力</span>
+        </div>
+    </header>
+
+    <div class="stats-panel">
+        <div class="stat-item">
+            <div class="stat-label">🗡️ 战力</div>
+            <div class="stat-value">1,280,000</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">🛡️ LV</div>
+            <div class="stat-value">90</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">🔮 魂力</div>
+            <div class="stat-value">2,100,000</div>
+        </div>
+    </div>
+
+    <main class="visual-area">
+        <div class="magic-circle-placeholder"></div>
+        <div class="dragon-placeholder">🐉</div>
+    </main>
+
+    <section class="info-panel">
+        <h1 class="dragon-name">蓝电霸王龙</h1>
+        <ul class="attributes-list">
+            <li>武魂类型：<span class="highlight">兽武魂 (SSS+)</span></li>
+            <li>主属性：<span class="highlight">雷霆/强攻</span></li>
+            <li>核心能力：<span class="highlight">蓝电领域、神雷天罚</span></li>
+            <li>战斗加成：<span class="highlight">暴击率+15%, 魂力回复+10%</span></li>
+        </ul>
+    </section>
+
+    <footer class="bottom-nav">
+        <div class="nav-btn">
+            <span class="icon">⚔️</span>
+            <span>试炼</span>
+        </div>
+        <div class="nav-btn">
+            <span class="icon">⭐</span>
+            <span>星运</span>
+        </div>
+        <div class="nav-btn active">
+            <span class="icon">🐲</span>
+            <span>武魂</span>
+        </div>
+        <div class="nav-btn">
+            <span class="icon">🌍</span>
+            <span>世界</span>
+        </div>
+        <div class="nav-btn">
+            <span class="icon">🎒</span>
+            <span>背包</span>
+        </div>
+    </footer>
+</div>
+
+</body>
+</html>
